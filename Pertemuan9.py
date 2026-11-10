@@ -626,3 +626,80 @@ class Game(tk.Frame):
             ball.speed_x = (
                 ball_center - paddle_center
             ) / 10
+
+        # Collision dengan bricks
+        for brick in self.bricks:
+
+            brick_coords = brick.get_position()
+
+            if (
+                ball_coords[2] >= brick_coords[0]
+                and ball_coords[0] <= brick_coords[2]
+                and ball_coords[3] >= brick_coords[1]
+                and ball_coords[1] <= brick_coords[3]
+            ):
+
+                ball.reverse_y()
+
+                destroyed = brick.hit()
+
+                if destroyed:
+
+                    self.score += 10
+
+                    # Peluang drop power-up
+                    if random.random() < self.DROP_CHANCE:
+                        self.spawn_powerup(
+                            (brick_coords[0] + brick_coords[2]) / 2,
+                            (brick_coords[1] + brick_coords[3]) / 2
+                        )
+
+                else:
+
+                    self.score += 2
+
+                self.update_hud()
+
+                if destroyed:
+                    self.bricks.remove(brick)
+
+                break
+
+    # ==============================
+    # GAME OVER
+    # ==============================
+
+    def show_game_over(self):
+
+        self.running = False
+        self.game_over = True
+
+        self.clear_powerups()
+
+        self.canvas.create_rectangle(
+            150, 220, 650, 390,
+            fill="#202b38",
+            outline="#ff4757",
+            width=3
+        )
+
+        self.canvas.create_text(
+            400, 270,
+            text="GAME OVER",
+            fill="#ff4757",
+            font=("Arial", 32, "bold")
+        )
+
+        self.canvas.create_text(
+            400, 320,
+            text=f"FINAL SCORE: {self.score}",
+            fill="white",
+            font=("Arial", 18)
+        )
+
+        self.canvas.create_text(
+            400, 355,
+            text="PRESS R TO RESTART",
+            fill="#00ffff",
+            font=("Arial", 13, "bold")
+        )
