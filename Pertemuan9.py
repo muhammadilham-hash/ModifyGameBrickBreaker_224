@@ -488,3 +488,63 @@ class Game(tk.Frame):
             self.lives = min(self.lives + 1, self.MAX_LIVES)
 
         self.update_hud()
+
+    def activate_multiball(self):
+
+        if not self.balls:
+            return
+
+        src = self.balls[0].get_position()
+
+        x = (src[0] + src[2]) / 2
+        y = (src[1] + src[3]) / 2
+
+        for dx in (-4, 4):
+
+            if len(self.balls) >= self.MAX_BALLS:
+                break
+
+            self.balls.append(Ball(self.canvas, x, y, dx, -5))
+
+    def update_powerups(self):
+
+        paddle_coords = self.paddle.get_position()
+
+        for p in self.powerups[:]:
+
+            p.update()
+
+            c = p.get_position()
+
+            # Tertangkap paddle
+            if (
+                c[2] >= paddle_coords[0]
+                and c[0] <= paddle_coords[2]
+                and c[3] >= paddle_coords[1]
+                and c[1] <= paddle_coords[3]
+            ):
+
+                self.activate_powerup(p.kind)
+                p.delete()
+                self.powerups.remove(p)
+
+            # Jatuh keluar layar
+            elif c[1] >= self.height:
+
+                p.delete()
+                self.powerups.remove(p)
+
+    def update_effects(self):
+
+        if self.wide_timer > 0:
+
+            self.wide_timer -= 1
+
+            if self.wide_timer == 0:
+                self.paddle.set_width(Paddle.DEFAULT_WIDTH)
+
+        if self.slow_timer > 0:
+            self.slow_timer -= 1
+
+        self.update_effect_text()
+
