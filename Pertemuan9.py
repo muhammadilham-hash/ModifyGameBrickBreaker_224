@@ -548,3 +548,81 @@ class Game(tk.Frame):
 
         self.update_effect_text()
 
+    # ==============================
+    # KEYBOARD CONTROL
+    # ==============================
+
+    def key_press(self, event):
+
+        key = event.keysym.lower()
+
+        self.keys.add(key)
+
+        if key == "space":
+
+            if not self.running and not self.game_over:
+                self.start_game()
+
+            elif self.paused:
+                self.paused = False
+
+                self.canvas.delete(self.message)
+
+        if key == "r":
+            self.restart_game()
+
+    def key_release(self, event):
+
+        key = event.keysym.lower()
+
+        self.keys.discard(key)
+
+    # ==============================
+    # START GAME
+    # ==============================
+
+    def start_game(self):
+
+        self.running = True
+        self.paused = False
+
+        if self.message is not None:
+            self.canvas.delete(self.message)
+
+        self.canvas.delete("hint")
+
+        self.message = None
+
+    # ==============================
+    # COLLISION DETECTION
+    # ==============================
+
+    def check_collisions(self, ball):
+
+        ball_coords = ball.get_position()
+
+        # Collision dengan paddle
+        paddle_coords = self.paddle.get_position()
+
+        if (
+            ball_coords[2] >= paddle_coords[0]
+            and ball_coords[0] <= paddle_coords[2]
+            and ball_coords[3] >= paddle_coords[1]
+            and ball_coords[1] <= paddle_coords[3]
+            and ball.speed_y > 0
+        ):
+
+            ball.speed_y = -abs(ball.speed_y)
+
+            # Mengubah arah bola berdasarkan posisi tumbukan
+            ball_center = (
+                ball_coords[0] + ball_coords[2]
+            ) / 2
+
+            paddle_center = (
+                paddle_coords[0] + paddle_coords[2]
+            ) / 2
+
+            ball.speed_x = (
+                ball_center - paddle_center
+            ) / 10
