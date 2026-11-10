@@ -302,3 +302,189 @@ class Game(tk.Frame):
 
         # Keyboard controls
         self.canvas.focus_set()
+
+        self.canvas.bind("<KeyPress>", self.key_press)
+        self.canvas.bind("<KeyRelease>", self.key_release)
+
+        # Start game loop
+        self.after(16, self.game_loop)
+
+    # ==============================
+    # HUD
+    # ==============================
+
+    def create_hud(self):
+
+        self.canvas.create_rectangle(
+            0, 0, self.width, 60,
+            fill="#202b38",
+            outline=""
+        )
+
+        self.score_text = self.canvas.create_text(
+            100, 30,
+            text="SCORE: 0",
+            fill="#00ffff",
+            font=("Arial", 15, "bold")
+        )
+
+        self.lives_text = self.canvas.create_text(
+            400, 30,
+            text="LIVES: 3",
+            fill="#ff4757",
+            font=("Arial", 15, "bold")
+        )
+
+        self.level_text = self.canvas.create_text(
+            690, 30,
+            text="LEVEL: 1",
+            fill="#2ed573",
+            font=("Arial", 15, "bold")
+        )
+
+        # Indikator power-up yang sedang aktif
+        self.effect_text = self.canvas.create_text(
+            400, 78,
+            text="",
+            fill="#f1c40f",
+            font=("Arial", 11, "bold")
+        )
+
+    def update_hud(self):
+
+        self.canvas.itemconfig(
+            self.score_text,
+            text=f"SCORE: {self.score}"
+        )
+
+        self.canvas.itemconfig(
+            self.lives_text,
+            text=f"LIVES: {self.lives}"
+        )
+
+        self.canvas.itemconfig(
+            self.level_text,
+            text=f"LEVEL: {self.level}"
+        )
+
+    def update_effect_text(self):
+
+        parts = []
+
+        if self.wide_timer > 0:
+            parts.append(f"WIDE {self.wide_timer // 62 + 1}s")
+
+        if self.slow_timer > 0:
+            parts.append(f"SLOW {self.slow_timer // 62 + 1}s")
+
+        self.canvas.itemconfig(
+            self.effect_text,
+            text="   ".join(parts)
+        )
+
+    # ==============================
+    # CREATE OBJECTS
+    # ==============================
+
+    def create_paddle(self):
+
+        self.paddle = Paddle(
+            self.canvas,
+            self.width / 2,
+            550
+        )
+
+    def create_ball(self):
+
+        for ball in self.balls:
+            ball.delete()
+
+        self.balls = []
+
+        paddle_coords = self.paddle.get_position()
+
+        x = (paddle_coords[0] + paddle_coords[2]) / 2
+
+        self.balls.append(Ball(
+            self.canvas,
+            x,
+            530
+        ))
+
+    def create_bricks(self):
+
+        self.bricks = []
+
+        rows = 5
+        columns = 9
+
+        brick_width = 70
+        gap = 10
+
+        start_x = 45
+        start_y = 100
+
+        for row in range(rows):
+
+            for col in range(columns):
+
+                x = start_x + col * (brick_width + gap)
+                y = start_y + row * 32
+
+                hits = ((row + self.level - 1) % 3) + 1
+
+                brick = Brick(
+                    self.canvas,
+                    x,
+                    y,
+                    hits
+                )
+
+                self.bricks.append(brick)
+
+    # ==============================
+    # POWER UP LOGIC
+    # ==============================
+
+    def spawn_powerup(self, x, y):
+
+        kind = random.choice(list(PowerUp.TYPES.keys()))
+
+        self.powerups.append(PowerUp(self.canvas, x, y, kind))
+
+    def clear_powerups(self):
+
+        for p in self.powerups:
+            p.delete()
+
+        self.powerups = []
+
+    def reset_effects(self):
+        """Matikan semua efek aktif dan hapus power-up yang sedang jatuh."""
+
+        self.clear_powerups()
+
+        self.wide_timer = 0
+        self.slow_timer = 0
+
+        if self.paddle is not None and self.paddle.get_position():
+            self.paddle.set_width(Paddle.DEFAULT_WIDTH)
+
+    def activate_powerup(self, kind):
+
+        self.score += 5
+
+        if kind == "W":
+            self.wide_timer = self.WIDE_DURATION
+            self.paddle.set_width(self.WIDE_SIZE)
+
+        elif kind == "M":
+            self.activate_multiball()
+
+        elif kind == "S":
+            self.slow_timer = self.SLOW_DURATION
+
+        elif kind == "L":
+            self.lives = min(self.lives + 1, self.MAX_LIVES)
+
+        self.update_hud()
