@@ -703,3 +703,169 @@ class Game(tk.Frame):
             fill="#00ffff",
             font=("Arial", 13, "bold")
         )
+
+    # ==============================
+    # NEXT LEVEL
+    # ==============================
+
+    def next_level(self):
+
+        self.running = False
+
+        self.level += 1
+
+        self.update_hud()
+
+        self.reset_effects()
+
+        self.canvas.delete("all")
+
+        self.create_hud()
+
+        self.update_hud()
+
+        self.create_paddle()
+
+        self.create_bricks()
+
+        self.create_ball()
+
+        self.message = self.canvas.create_text(
+            400, 300,
+            text=f"LEVEL {self.level} COMPLETED!",
+            fill="#2ed573",
+            font=("Arial", 28, "bold")
+        )
+
+        self.after(1500, self.start_game)
+
+    # ==============================
+    # RESTART GAME
+    # ==============================
+
+    def restart_game(self):
+
+        self.score = 0
+        self.lives = 3
+        self.level = 1
+
+        self.running = False
+        self.paused = False
+        self.game_over = False
+
+        self.reset_effects()
+
+        self.canvas.delete("all")
+
+        self.create_hud()
+
+        self.create_paddle()
+
+        self.create_bricks()
+
+        self.create_ball()
+
+        self.update_hud()
+
+        self.message = self.canvas.create_text(
+            400, 300,
+            text="PRESS SPACE TO START",
+            fill="white",
+            font=("Arial", 24, "bold")
+        )
+
+        self.canvas.create_text(
+            400, 335,
+            text="Use LEFT / RIGHT or A / D to move",
+            fill="#aaaaaa",
+            font=("Arial", 12),
+            tags="hint"
+        )
+
+    # ==============================
+    # MAIN GAME LOOP
+    # ==============================
+
+    def game_loop(self):
+
+        if self.running and not self.paused:
+
+            # Paddle movement
+            if "left" in self.keys or "a" in self.keys:
+                self.paddle.move_paddle(-1)
+
+            if "right" in self.keys or "d" in self.keys:
+                self.paddle.move_paddle(1)
+
+            # Efek power-up (timer)
+            self.update_effects()
+
+            # Ball movement + collision
+            scale = self.SLOW_FACTOR if self.slow_timer > 0 else 1.0
+
+            for ball in self.balls[:]:
+                ball.speed_scale = scale
+                ball.update()
+                self.check_collisions(ball)
+
+            # Power-up yang jatuh
+            self.update_powerups()
+
+            # Check if all bricks are destroyed
+            if len(self.bricks) == 0:
+
+                self.next_level()
+
+            else:
+
+                # Hapus bola yang jatuh
+                for ball in self.balls[:]:
+                    if ball.get_position()[3] >= self.height:
+                        ball.delete()
+                        self.balls.remove(ball)
+
+                # Semua bola habis -> nyawa berkurang
+                if not self.balls:
+
+                    self.lives -= 1
+
+                    self.update_hud()
+
+                    self.reset_effects()
+                    self.update_effect_text()
+
+                    if self.lives <= 0:
+
+                        self.show_game_over()
+
+                    else:
+
+                        self.create_ball()
+
+                        self.running = False
+
+                        self.message = self.canvas.create_text(
+                            400, 300,
+                            text="BALL LOST! PRESS SPACE",
+                            fill="#ffa502",
+                            font=("Arial", 22, "bold")
+                        )
+
+        self.after(16, self.game_loop)
+
+
+# ==============================
+# MAIN PROGRAM
+# ==============================
+
+if __name__ == "__main__":
+
+    root = tk.Tk()
+
+    root.title("BRICK BREAKER GAME")
+
+    root.resizable(False, False)
+
+    game = Game(root)
+
+    root.mainloop()
