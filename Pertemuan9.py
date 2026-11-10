@@ -216,3 +216,89 @@ class PowerUp(GameObject):
     def update(self):
         self.move(0, self.speed)
 
+
+# ==============================
+# MAIN GAME CLASS
+# ==============================
+
+class Game(tk.Frame):
+
+    DROP_CHANCE = 0.25       # peluang power-up muncul saat brick hancur
+    WIDE_DURATION = 600      # frame (~10 detik)
+    SLOW_DURATION = 500      # frame (~8 detik)
+    WIDE_SIZE = 180
+    SLOW_FACTOR = 0.6
+    MAX_BALLS = 6
+    MAX_LIVES = 5
+
+    def __init__(self, master):
+
+        super().__init__(master)
+
+        self.width = 800
+        self.height = 600
+
+        self.score = 0
+        self.lives = 3
+        self.level = 1
+
+        self.running = False
+        self.paused = False
+        self.game_over = False
+
+        self.keys = set()
+
+        # Power-up state
+        self.powerups = []
+        self.wide_timer = 0
+        self.slow_timer = 0
+
+        # Canvas
+        self.canvas = tk.Canvas(
+            self,
+            width=self.width,
+            height=self.height,
+            bg="#101820",
+            highlightthickness=0
+        )
+
+        self.canvas.pack()
+        self.pack()
+
+        # Game objects
+        self.balls = []
+        self.paddle = None
+        self.bricks = []
+
+        # HUD
+        self.create_hud()
+
+        # Paddle
+        self.create_paddle()
+
+        # Bricks
+        self.create_bricks()
+
+        # Ball
+        self.create_ball()
+
+        # Instructions
+        self.message = self.canvas.create_text(
+            self.width / 2,
+            300,
+            text="PRESS SPACE TO START",
+            fill="white",
+            font=("Arial", 24, "bold")
+        )
+
+        self.canvas.create_text(
+            self.width / 2,
+            335,
+            text="Use LEFT / RIGHT or A / D to move",
+            fill="#aaaaaa",
+            font=("Arial", 12),
+            tags="hint"
+        )
+
+        # Keyboard controls
+        self.canvas.focus_set()
